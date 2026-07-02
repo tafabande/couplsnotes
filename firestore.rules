@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow public read access to all notes collections (dev, stage, prod)
+    // Enforce title, content, author presence on write
+    match /notes_dev/{noteId} {
+      allow read: if true;
+      allow write: if request.resource.data.title != "" 
+                   && request.resource.data.content != "" 
+                   && request.resource.data.author != "";
+    }
+    match /notes_stage/{noteId} {
+      allow read: if true;
+      allow write: if request.resource.data.title != "" 
+                   && request.resource.data.content != "" 
+                   && request.resource.data.author != "";
+    }
+    match /notes_prod/{noteId} {
+      allow read: if true;
+      allow write: if request.resource.data.title != "" 
+                   && request.resource.data.content != "" 
+                   && request.resource.data.author != "";
+    }
+  }
+}
