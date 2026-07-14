@@ -9,6 +9,7 @@ import com.example.noteshare.data.local.db.NoteShareDatabase
 import com.example.noteshare.data.local.db.dao.EventDao
 import com.example.noteshare.data.local.db.dao.MoodDao
 import com.example.noteshare.data.local.db.dao.NoteDao
+import com.example.noteshare.data.local.db.dao.OutboxDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,6 +43,9 @@ object DatabaseModule {
 
     @Provides
     fun provideEventDao(db: NoteShareDatabase): EventDao = db.eventDao()
+
+    @Provides
+    fun provideOutboxDao(db: NoteShareDatabase): OutboxDao = db.outboxDao()
 
     @Provides
     @Singleton
