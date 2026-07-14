@@ -15,6 +15,13 @@ data class Pair(
     val user2Id: String = "",
     val inviteCode: String = "",
     val status: String = "pending", // "pending", "active", "dissolved"
+    val pendingJoinUserId: String? = null,
+    val pendingJoinUserName: String? = null,
+    val joinRequestedAt: Long? = null,
+    val disconnectRequestedAt: Long? = null,
+    val accessEndsAt: Long? = null,
+    val wipeRequestedBy: String? = null,
+    val wipeRequestedAt: Long? = null,
     val anniversary: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val syncStatus: SyncStatus = SyncStatus.PENDING,
@@ -30,4 +37,7 @@ data class Pair(
 
     val isActive: Boolean get() = status == "active"
     val isPending: Boolean get() = status == "pending"
+    val isAwaitingApproval: Boolean get() = pendingJoinUserId != null
+    val isDisconnecting: Boolean get() = status == "disconnecting"
+    val isDissolved: Boolean get() = status == "dissolved"
 }

@@ -28,6 +28,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.example.noteshare.R
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,14 +55,25 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    var googleLoading by remember { mutableStateOf(false) }
+    var googleTimeoutJob by remember { mutableStateOf<Job?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         viewModel.authEvent.collect { event ->
             when (event) {
                 is AuthEvent.NavigateToPairing -> onRegisterSuccess()
-                else -> {}
+                is AuthEvent.NavigateToHome -> onRegisterSuccess()
+                is AuthEvent.PasswordResetSent -> {
+                    snackbarHostState.showSnackbar("Password reset email sent.")
+                }
             }
         }
+    }
+
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { snackbarHostState.showSnackbar(it) }
     }
 
     val context = LocalContext.current
@@ -73,18 +90,34 @@ fun RegisterScreen(
     val googleAuthLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        googleLoading = false
+        googleTimeoutJob?.cancel()
         if (result.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
             try {
                 val account = task.getResult(ApiException::class.java)
-                account?.idToken?.let { viewModel.signInWithGoogle(it) }
+                val idToken = account?.idToken
+                if (idToken.isNullOrBlank()) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("Google sign-in did not return a usable token.")
+                    }
+                } else {
+                    viewModel.signInWithGoogle(idToken)
+                }
             } catch (e: Exception) {
-                e.printStackTrace()
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Google sign-in failed. Please try again.")
+                }
+            }
+        } else {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar("Google sign-in was cancelled.")
             }
         }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {},
@@ -320,16 +353,31 @@ fun RegisterScreen(
 
             // Google Sign-In button
             OutlinedButton(
-                onClick = { googleAuthLauncher.launch(googleSignInClient.signInIntent) },
+                onClick = {
+                    googleLoading = true
+                    googleTimeoutJob?.cancel()
+                    googleTimeoutJob = coroutineScope.launch {
+                        delay(15000)
+                        if (googleLoading) {
+                            googleLoading = false
+                            snackbarHostState.showSnackbar("Google sign-in timed out. Please try again.")
+                        }
+                    }
+                    googleAuthLauncher.launch(googleSignInClient.signInIntent)
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                enabled = !uiState.isLoading && !googleLoading
             ) {
-                Text(
-                    text = "Continue with Google",
-                    fontSize = 16.sp
-                )
+                if (googleLoading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Connecting...")
+                } else {
+                    Text(text = "Continue with Google", fontSize = 16.sp)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

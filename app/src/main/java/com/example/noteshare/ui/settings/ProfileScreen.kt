@@ -1,18 +1,55 @@
 package com.example.noteshare.ui.settings
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.shape.CircleShape
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -29,10 +66,11 @@ fun ProfileScreen(
     var birthday by remember { mutableStateOf(uiState.user?.birthday) }
     var gender by remember { mutableStateOf(uiState.user?.gender ?: "") }
     var favoriteColor by remember { mutableStateOf(uiState.user?.favoriteColor ?: "") }
+    var partnerNickname by remember { mutableStateOf(uiState.user?.partnerNickname ?: "") }
+    var reminderHour by remember { mutableStateOf(uiState.user?.reminderHour?.toString().orEmpty()) }
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var genderExpanded by remember { mutableStateOf(false) }
-    val genderOptions = listOf("Male", "Female", "Other")
+    val genderOptions = listOf("Female", "Male", "Other", "Prefer not to say")
 
     LaunchedEffect(uiState.user) {
         uiState.user?.let { user ->
@@ -40,6 +78,8 @@ fun ProfileScreen(
             birthday = user.birthday
             gender = user.gender ?: ""
             favoriteColor = user.favoriteColor ?: ""
+            partnerNickname = user.partnerNickname ?: ""
+            reminderHour = user.reminderHour?.toString().orEmpty()
         }
     }
 
@@ -53,14 +93,10 @@ fun ProfileScreen(
                 TextButton(onClick = {
                     showDatePicker = false
                     birthday = datePickerState.selectedDateMillis
-                }) {
-                    Text("OK")
-                }
+                }) { Text("Use date") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -70,28 +106,37 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile") },
+                title = {
+                    Column {
+                        Text("Profile", fontWeight = FontWeight.SemiBold)
+                        Text("Keep your shared space personal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    TextButton(onClick = {
-                        viewModel.updateProfile(mapOf(
-                            "displayName" to displayName,
-                            "birthday" to birthday,
-                            "gender" to gender.ifBlank { null },
-                            "favoriteColor" to favoriteColor.ifBlank { null }
-                        ))
-                        onNavigateBack()
-                    }) {
+                    TextButton(
+                        onClick = {
+                            viewModel.updateProfile(
+                                mapOf(
+                                    "displayName" to displayName,
+                                    "birthday" to birthday,
+                                    "gender" to gender.ifBlank { null },
+                                    "favoriteColor" to favoriteColor.ifBlank { null },
+                                    "partnerNickname" to partnerNickname.ifBlank { null },
+                                    "reminderHour" to reminderHour.toIntOrNull()
+                                )
+                            )
+                            onNavigateBack()
+                        }
+                    ) {
                         Text("Save", fontWeight = FontWeight.SemiBold)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -99,50 +144,62 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 24.dp)
+                .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = MaterialTheme.shapes.large
             ) {
-                Surface(
-                    modifier = Modifier.size(80.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    shadowElevation = 4.dp
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = displayName.firstOrNull()?.uppercase() ?: "?",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    Surface(
+                        modifier = Modifier.size(84.dp),
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = displayName.firstOrNull()?.uppercase() ?: "?",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
+                    Text(text = displayName.ifBlank { "Your profile" }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(text = uiState.user?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             OutlinedTextField(
                 value = displayName,
                 onValueChange = { displayName = it },
-                label = { Text("Display Name") },
+                label = { Text("Display name") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) }
+            )
+
+            OutlinedTextField(
+                value = partnerNickname,
+                onValueChange = { partnerNickname = it },
+                label = { Text("Partner nickname") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 singleLine = true
             )
 
-            // Birthday Field
             val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
             val birthdayText = birthday?.let { dateFormat.format(Date(it)) } ?: ""
             OutlinedTextField(
                 value = birthdayText,
-                onValueChange = { },
+                onValueChange = {},
                 label = { Text("Birthday") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
@@ -150,56 +207,47 @@ fun ProfileScreen(
                 readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                        Icon(Icons.Default.DateRange, contentDescription = "Select date")
                     }
                 }
             )
 
-            // Gender Dropdown
-            ExposedDropdownMenuBox(
-                expanded = genderExpanded,
-                onExpandedChange = { genderExpanded = !genderExpanded }
-            ) {
-                OutlinedTextField(
-                    value = gender,
-                    onValueChange = { gender = it },
-                    label = { Text("Gender") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    shape = MaterialTheme.shapes.medium,
-                    singleLine = true,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded)
-                    },
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                )
-                ExposedDropdownMenu(
-                    expanded = genderExpanded,
-                    onDismissRequest = { genderExpanded = false }
-                ) {
-                    genderOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                gender = option
-                                genderExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
+            OutlinedTextField(
+                value = gender,
+                onValueChange = { gender = it },
+                label = { Text("Identity") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                singleLine = true,
+                supportingText = { Text("Suggested options: ${genderOptions.joinToString()}") }
+            )
 
             OutlinedTextField(
                 value = favoriteColor,
                 onValueChange = { favoriteColor = it },
-                label = { Text("Favorite Color") },
+                label = { Text("Favorite color") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = reminderHour,
+                onValueChange = { reminderHour = it.filter { char -> char.isDigit() }.take(2) },
+                label = { Text("Reminder hour") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                singleLine = true,
+                supportingText = { Text("Optional. 0 to 23, used for quiet daily reminders.") }
+            )
+
+            OutlinedButton(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text("Pick birthday")
+            }
 
             Text(
                 text = "Email: ${uiState.user?.email ?: "—"}",

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "bc87ea7a588631c6d322ab085f1c198a",
+    "identityHash": "eb6523d8e74555c5b1ba39d3ea1933c7",
     "entities": [
       {
         "tableName": "notes",
@@ -282,7 +282,7 @@
       },
       {
         "tableName": "users",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `displayName` TEXT NOT NULL, `email` TEXT NOT NULL, `photoUrl` TEXT, `age` INTEGER, `gender` TEXT, `favoriteColor` TEXT, `birthday` INTEGER, `pairId` TEXT, `createdAt` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `displayName` TEXT NOT NULL, `email` TEXT NOT NULL, `photoUrl` TEXT, `age` INTEGER, `gender` TEXT, `favoriteColor` TEXT, `birthday` INTEGER, `pairId` TEXT, `partnerNickname` TEXT, `anniversary` INTEGER, `reminderHour` INTEGER, `createdAt` INTEGER NOT NULL, `lastSeen` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -339,6 +339,24 @@
             "notNull": false
           },
           {
+            "fieldPath": "partnerNickname",
+            "columnName": "partnerNickname",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "anniversary",
+            "columnName": "anniversary",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "reminderHour",
+            "columnName": "reminderHour",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
             "fieldPath": "createdAt",
             "columnName": "createdAt",
             "affinity": "INTEGER",
@@ -374,7 +392,7 @@
       },
       {
         "tableName": "pairs",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user1Id` TEXT NOT NULL, `user2Id` TEXT NOT NULL, `inviteCode` TEXT NOT NULL, `status` TEXT NOT NULL, `anniversary` INTEGER, `createdAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `user1Id` TEXT NOT NULL, `user2Id` TEXT NOT NULL, `inviteCode` TEXT NOT NULL, `status` TEXT NOT NULL, `pendingJoinUserId` TEXT, `pendingJoinUserName` TEXT, `joinRequestedAt` INTEGER, `disconnectRequestedAt` INTEGER, `accessEndsAt` INTEGER, `wipeRequestedBy` TEXT, `wipeRequestedAt` INTEGER, `anniversary` INTEGER, `createdAt` INTEGER NOT NULL, `syncStatus` TEXT NOT NULL, `version` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -405,6 +423,48 @@
             "columnName": "status",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "pendingJoinUserId",
+            "columnName": "pendingJoinUserId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "pendingJoinUserName",
+            "columnName": "pendingJoinUserName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "joinRequestedAt",
+            "columnName": "joinRequestedAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "disconnectRequestedAt",
+            "columnName": "disconnectRequestedAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "accessEndsAt",
+            "columnName": "accessEndsAt",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wipeRequestedBy",
+            "columnName": "wipeRequestedBy",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "wipeRequestedAt",
+            "columnName": "wipeRequestedAt",
+            "affinity": "INTEGER",
+            "notNull": false
           },
           {
             "fieldPath": "anniversary",
@@ -494,7 +554,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bc87ea7a588631c6d322ab085f1c198a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eb6523d8e74555c5b1ba39d3ea1933c7')"
     ]
   }
 }

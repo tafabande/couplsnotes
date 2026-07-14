@@ -78,20 +78,68 @@ class PairRepository @Inject constructor(
                 return Result.Error("You can't join your own pair")
             }
 
-            // BR-101: The Duopoly Constriction is naturally enforced here by exactly setting user2Id
-            // Update pair with second user and set to active
+            if (pair.user2Id.isNotBlank()) {
+                return Result.Error("This pairing is already linked")
+            }
+
+            // Ask the inviter to approve the request instead of auto-linking.
             firestoreDataSource.updatePair(pair.id, mapOf(
-                "user2Id" to userId,
-                "status" to Constants.PAIR_STATUS_ACTIVE
+                "pendingJoinUserId" to userId,
+                "pendingJoinUserName" to (user.displayName.ifBlank { user.email }),
+                "joinRequestedAt" to System.currentTimeMillis()
             ))
 
-            // Update user's pairId
-            firestoreDataSource.updateUser(userId, mapOf("pairId" to pair.id))
-
-            val updatedPair = pair.copy(user2Id = userId, status = Constants.PAIR_STATUS_ACTIVE)
-            Result.Success(updatedPair)
+            Result.Success(pair.copy(
+                pendingJoinUserId = userId,
+                pendingJoinUserName = user.displayName.ifBlank { user.email },
+                joinRequestedAt = System.currentTimeMillis()
+            ))
         } catch (e: Exception) {
             Result.Error("Failed to join pair: ${e.message}", e)
+        }
+    }
+
+    suspend fun approveJoinRequest(pairId: String, approverId: String, requesterId: String): Result<Pair> {
+        return try {
+            val pair = firestoreDataSource.getPair(pairId) ?: return Result.Error("Pair not found")
+            if (!pair.containsUser(approverId)) return Result.Error("You are not part of this pairing")
+            if (pair.user1Id != approverId) return Result.Error("Only the inviter can approve requests")
+            if (pair.pendingJoinUserId != requesterId) return Result.Error("That request is no longer pending")
+
+            firestoreDataSource.updatePair(pairId, mapOf(
+                "user2Id" to requesterId,
+                "status" to Constants.PAIR_STATUS_ACTIVE,
+                "pendingJoinUserId" to null,
+                "pendingJoinUserName" to null,
+                "joinRequestedAt" to null
+            ))
+            firestoreDataSource.updateUser(approverId, mapOf("pairId" to pairId))
+            firestoreDataSource.updateUser(requesterId, mapOf("pairId" to pairId))
+
+            Result.Success(pair.copy(
+                user2Id = requesterId,
+                status = Constants.PAIR_STATUS_ACTIVE,
+                pendingJoinUserId = null,
+                pendingJoinUserName = null,
+                joinRequestedAt = null
+            ))
+        } catch (e: Exception) {
+            Result.Error("Failed to approve request: ${e.message}", e)
+        }
+    }
+
+    suspend fun rejectJoinRequest(pairId: String, approverId: String): Result<Unit> {
+        return try {
+            val pair = firestoreDataSource.getPair(pairId) ?: return Result.Error("Pair not found")
+            if (pair.user1Id != approverId) return Result.Error("Only the inviter can reject requests")
+            firestoreDataSource.updatePair(pairId, mapOf(
+                "pendingJoinUserId" to null,
+                "pendingJoinUserName" to null,
+                "joinRequestedAt" to null
+            ))
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error("Failed to reject request: ${e.message}", e)
         }
     }
 
@@ -123,7 +171,8 @@ class PairRepository @Inject constructor(
         return try {
             firestoreDataSource.updatePair(pairId, mapOf(
                 "status" to Constants.PAIR_STATUS_DISCONNECTING,
-                "disconnectRequestedAt" to System.currentTimeMillis()
+                "disconnectRequestedAt" to System.currentTimeMillis(),
+                "accessEndsAt" to System.currentTimeMillis() + TimeUnit.DAYS.toMillis(15)
             ))
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -138,7 +187,8 @@ class PairRepository @Inject constructor(
         return try {
             firestoreDataSource.updatePair(pairId, mapOf(
                 "status" to Constants.PAIR_STATUS_ACTIVE,
-                "disconnectRequestedAt" to null
+                "disconnectRequestedAt" to null,
+                "accessEndsAt" to null
             ))
             Result.Success(Unit)
         } catch (e: Exception) {
@@ -146,17 +196,28 @@ class PairRepository @Inject constructor(
         }
     }
 
-    /**
-     * Dissolve a pair completely (after cooldown).
-     */
-    suspend fun dissolvePair(pairId: String): Result<Unit> {
+    suspend fun requestWipe(pairId: String, requesterId: String): Result<Unit> {
         return try {
             firestoreDataSource.updatePair(pairId, mapOf(
-                "status" to Constants.PAIR_STATUS_DISSOLVED
+                "wipeRequestedBy" to requesterId,
+                "wipeRequestedAt" to System.currentTimeMillis()
             ))
             Result.Success(Unit)
         } catch (e: Exception) {
-            Result.Error("Failed to dissolve pair: ${e.message}", e)
+            Result.Error("Failed to request wipe: ${e.message}", e)
+        }
+    }
+
+    suspend fun confirmWipe(pairId: String): Result<Unit> {
+        return try {
+            firestoreDataSource.updatePair(pairId, mapOf(
+                "status" to Constants.PAIR_STATUS_DISSOLVED,
+                "wipeRequestedBy" to null,
+                "wipeRequestedAt" to null
+            ))
+            Result.Success(Unit)
+        } catch (e: Exception) {
+            Result.Error("Failed to wipe pair: ${e.message}", e)
         }
     }
 

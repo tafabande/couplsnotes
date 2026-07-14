@@ -15,11 +15,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.AlertDialog
@@ -65,9 +70,13 @@ fun SettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var notificationsEnabled by remember { mutableStateOf(true) }
+    var compactModeEnabled by remember { mutableStateOf(true) }
+    var autoSyncEnabled by remember { mutableStateOf(true) }
+    var privacyLockEnabled by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.error) {
         uiState.error?.let { snackbarHostState.showSnackbar(it) }
@@ -77,7 +86,9 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.SemiBold) },
+                title = {
+                    Text("Settings", fontWeight = FontWeight.SemiBold)
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
@@ -85,19 +96,19 @@ fun SettingsScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             item {
                 Card(
-                    modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToProfile),
+                    modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = MaterialTheme.shapes.large
                 ) {
                     Row(modifier = Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             modifier = Modifier.size(56.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = MaterialTheme.shapes.large
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
@@ -112,29 +123,29 @@ fun SettingsScreen(
                             Text(text = uiState.user?.displayName ?: "Loading profile", fontWeight = FontWeight.SemiBold)
                             Text(text = uiState.user?.email ?: "Working out your account", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = onNavigateToProfile) { Text("Edit") }
                     }
                 }
             }
 
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)),
                     shape = MaterialTheme.shapes.large
                 ) {
                     Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                         StatItem("Notes", uiState.noteCount.toString())
-                        StatItem("Sync", "Ready")
-                        StatItem("Theme", "Clean")
+                        StatItem("Sync", if (autoSyncEnabled) "On" else "Off")
+                        StatItem("Mode", if (compactModeEnabled) "Compact" else "Spacious")
                     }
                 }
             }
 
+            item { SectionLabel("Account") }
             item {
                 SettingsRow(
                     icon = Icons.Default.Person,
                     title = "Profile",
-                    subtitle = "Edit your name and account details",
                     onClick = onNavigateToProfile
                 )
             }
@@ -142,38 +153,69 @@ fun SettingsScreen(
                 SettingsRow(
                     icon = Icons.Default.Settings,
                     title = "Relationship",
-                    subtitle = "Partner and shared space settings",
                     onClick = onNavigateToRelationship
                 )
             }
+
+            item { SectionLabel("Experience") }
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Notifications", fontWeight = FontWeight.Medium)
-                            Text("Quick reminders and sync nudges", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ToggleRow(
+                    icon = Icons.Default.Notifications,
+                    title = "Notifications",
+                    checked = notificationsEnabled,
+                    onCheckedChange = {
+                        notificationsEnabled = it
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(if (it) "Notifications enabled." else "Notifications muted.")
                         }
-                        Switch(
-                            checked = notificationsEnabled,
-                            onCheckedChange = {
-                                notificationsEnabled = it
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar(if (it) "Notifications enabled." else "Notifications muted.")
-                                }
-                            }
-                        )
                     }
-                }
+                )
             }
             item {
-                SettingsRow(
+                ToggleRow(
+                    icon = Icons.Default.Palette,
+                    title = "Compact layout",
+                    checked = compactModeEnabled,
+                    onCheckedChange = {
+                        compactModeEnabled = it
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(if (it) "Compact layout on." else "Compact layout off.")
+                        }
+                    }
+                )
+            }
+            item {
+                ToggleRow(
                     icon = Icons.Default.Sync,
+                    title = "Auto sync",
+                    checked = autoSyncEnabled,
+                    onCheckedChange = {
+                        autoSyncEnabled = it
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(if (it) "Auto sync enabled." else "Auto sync paused.")
+                        }
+                    }
+                )
+            }
+            item {
+                ToggleRow(
+                    icon = Icons.Default.Lock,
+                    title = "Private mode",
+                    checked = privacyLockEnabled,
+                    onCheckedChange = {
+                        privacyLockEnabled = it
+                        coroutineScope.launch {
+                            snackbarHostState.showSnackbar(if (it) "Privacy lock enabled." else "Privacy lock disabled.")
+                        }
+                    }
+                )
+            }
+
+            item { SectionLabel("Data") }
+            item {
+                SettingsRow(
+                    icon = Icons.Default.Share,
                     title = "Sync now",
-                    subtitle = "Push pending changes immediately",
                     onClick = {
                         coroutineScope.launch { snackbarHostState.showSnackbar("Sync started.") }
                     }
@@ -183,7 +225,6 @@ fun SettingsScreen(
                 SettingsRow(
                     icon = Icons.Default.Info,
                     title = "About",
-                    subtitle = "App version and support information",
                     onClick = { showAboutDialog = true }
                 )
             }
@@ -191,10 +232,9 @@ fun SettingsScreen(
                 OutlinedButton(
                     onClick = { showLogoutDialog = true },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text("Log out")
                 }
             }
@@ -204,11 +244,9 @@ fun SettingsScreen(
     if (showAboutDialog) {
         AlertDialog(
             onDismissRequest = { showAboutDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showAboutDialog = false }) { Text("Close") }
-            },
+            confirmButton = { TextButton(onClick = { showAboutDialog = false }) { Text("Close") } },
             title = { Text("About NoteShare") },
-            text = { Text("A calmer, simpler space for shared notes, moods, and plans.") }
+            text = { Text("A calm shared space for notes, moods, memories, and plans.") }
         )
     }
 
@@ -229,6 +267,17 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+    )
+}
+
+@Composable
 private fun StatItem(label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -240,22 +289,59 @@ private fun StatItem(label: String, value: String) {
 private fun SettingsRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    subtitle: String,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = MaterialTheme.shapes.medium
+        shape = RoundedCornerShape(20.dp)
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = title, fontWeight = FontWeight.Medium)
-                Text(text = subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun ToggleRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = title, fontWeight = FontWeight.Medium)
+            }
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
         }
     }
 }
