@@ -46,16 +46,6 @@ fun HomeScreen(
     val handleNoteClick = rememberVaultNavigationInterceptor(onNavigateToDetail = onNavigateToNoteDetail)
 
     Scaffold(
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onNavigateToNoteEditor("new") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                shape = CircleShape
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "New Note")
-            }
-        }
     ) { padding ->
         if (uiState.isLoading) {
             Box(
@@ -216,18 +206,14 @@ private fun GreetingHeader(
     isPartnerOnline: Boolean,
     isSyncing: Boolean
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                        MaterialTheme.colorScheme.background
-                    )
-                )
-            )
-            .padding(horizontal = 20.dp, vertical = 24.dp),
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -266,6 +252,7 @@ private fun GreetingHeader(
             }
         }
     }
+}
 }
 
 @Composable
@@ -472,16 +459,24 @@ private fun MoodSummaryCard(
         ) {
             // My mood
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = myMood?.emoji ?: "❓",
-                    fontSize = 28.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (myMood != null) "You" else "Check in",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (myMood != null) {
+                    Text(
+                        text = myMood.emoji,
+                        fontSize = 28.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "You",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "Check in",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             Icon(
@@ -493,16 +488,24 @@ private fun MoodSummaryCard(
 
             // Partner mood
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = partnerMood?.emoji ?: "❓",
-                    fontSize = 28.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (partnerMood != null) "Partner" else "Waiting",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (partnerMood != null) {
+                    Text(
+                        text = partnerMood.emoji,
+                        fontSize = 28.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Partner",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "No partner connected",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
         }
     }
@@ -518,8 +521,8 @@ private fun SectionHeader(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.Bottom
     ) {
         Text(
             text = title,
@@ -527,6 +530,7 @@ private fun SectionHeader(
             fontWeight = FontWeight.SemiBold
         )
         if (subtitle != null) {
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,

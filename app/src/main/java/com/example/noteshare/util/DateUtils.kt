@@ -28,7 +28,7 @@ object DateUtils {
             hour < 5 -> "🌙"
             hour < 12 -> "☀️"
             hour < 17 -> "🌤️"
-            hour < 21 -> "🌅"
+            hour < 21 -> "🌇"
             else -> "🌙"
         }
     }

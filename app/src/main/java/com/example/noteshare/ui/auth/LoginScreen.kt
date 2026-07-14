@@ -20,6 +20,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.example.noteshare.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +52,31 @@ fun LoginScreen(
                 is AuthEvent.NavigateToHome -> onLoginSuccess()
                 is AuthEvent.NavigateToPairing -> onLoginSuccess()
                 else -> {}
+            }
+        }
+    }
+
+    val context = LocalContext.current
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(
+            context, 
+            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(context.getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build()
+        )
+    }
+
+    val googleAuthLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                account?.idToken?.let { viewModel.signInWithGoogle(it) }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -199,7 +232,7 @@ fun LoginScreen(
 
             // Google Sign-In button
             OutlinedButton(
-                onClick = { /* TODO: Launch Google Sign-In intent */ },
+                onClick = { googleAuthLauncher.launch(googleSignInClient.signInIntent) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),

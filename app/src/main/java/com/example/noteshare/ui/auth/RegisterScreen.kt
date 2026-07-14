@@ -20,6 +20,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import androidx.compose.ui.platform.LocalContext
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.example.noteshare.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +55,31 @@ fun RegisterScreen(
             when (event) {
                 is AuthEvent.NavigateToPairing -> onRegisterSuccess()
                 else -> {}
+            }
+        }
+    }
+
+    val context = LocalContext.current
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(
+            context, 
+            GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(context.getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build()
+        )
+    }
+
+    val googleAuthLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                account?.idToken?.let { viewModel.signInWithGoogle(it) }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -265,6 +298,38 @@ fun RegisterScreen(
                 } else {
                     Text("Create Account", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Divider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f))
+                Text(
+                    text = "  or  ",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Google Sign-In button
+            OutlinedButton(
+                onClick = { googleAuthLauncher.launch(googleSignInClient.signInIntent) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(
+                    text = "Continue with Google",
+                    fontSize = 16.sp
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
