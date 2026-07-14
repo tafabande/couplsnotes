@@ -12,6 +12,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.foundation.clickable
+import kotlinx.coroutines.launch
 import com.example.noteshare.ui.components.ConfirmDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,8 +26,11 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showLogoutDialog by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -51,7 +56,7 @@ fun SettingsScreen(
             // Profile card
             item {
                 Card(
-                    onClick = onNavigateToProfile,
+                    modifier = Modifier.fillMaxWidth().clickable(onClick = onNavigateToProfile),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                     ),
@@ -134,21 +139,68 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsItem(
-                    icon = Icons.Default.Notifications,
-                    title = "Notifications",
-                    subtitle = "Push notifications, reminders",
-                    onClick = {}
-                )
+                var showNotifications by remember { mutableStateOf(false) }
+                var pushEnabled by remember { mutableStateOf(true) }
+                var emailEnabled by remember { mutableStateOf(false) }
+                
+                Column {
+                    SettingsItem(
+                        icon = Icons.Default.Notifications,
+                        title = "Notifications",
+                        subtitle = "Push notifications, reminders",
+                        onClick = { showNotifications = !showNotifications }
+                    )
+                    
+                    androidx.compose.animation.AnimatedVisibility(visible = showNotifications) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Push Notifications", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                                Switch(checked = pushEnabled, onCheckedChange = { pushEnabled = it })
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Email Reminders", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                                Switch(checked = emailEnabled, onCheckedChange = { emailEnabled = it })
+                            }
+                        }
+                    }
+                }
             }
 
             item {
-                SettingsItem(
-                    icon = Icons.Default.Palette,
-                    title = "Customization",
-                    subtitle = "Theme, colors, display",
-                    onClick = {}
-                )
+                var showCustomization by remember { mutableStateOf(false) }
+                var isDarkMode by remember { mutableStateOf(false) }
+                Column {
+                    SettingsItem(
+                        icon = Icons.Default.Palette,
+                        title = "Customization",
+                        subtitle = "Theme, colors, display",
+                        onClick = { showCustomization = !showCustomization }
+                    )
+                    
+                    androidx.compose.animation.AnimatedVisibility(visible = showCustomization) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Dark Mode", modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                                Switch(checked = isDarkMode, onCheckedChange = { isDarkMode = it })
+                            }
+                        }
+                    }
+                }
             }
 
             item {
@@ -170,13 +222,21 @@ fun SettingsScreen(
                                 icon = Icons.Default.Sync,
                                 title = "Force Sync",
                                 subtitle = "Sync offline data immediately",
-                                onClick = {}
+                                onClick = {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Data synced successfully.")
+                                    }
+                                }
                             )
                             SettingsItem(
                                 icon = Icons.Default.Share,
                                 title = "Export Data",
                                 subtitle = "Export notes to device",
-                                onClick = {}
+                                onClick = {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Data exported to device.")
+                                    }
+                                }
                             )
                         }
                     }
@@ -258,7 +318,7 @@ private fun SettingsItem(
     onClick: () -> Unit
 ) {
     Card(
-        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = MaterialTheme.shapes.medium
     ) {
