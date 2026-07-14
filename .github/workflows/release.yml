@@ -40,6 +40,9 @@ jobs:
             echo "No KEYSTORE_BASE64 secret found, using placeholder debug keystore for release."
           fi
 
+      - name: Create local.properties
+        run: touch local.properties
+
       - name: Build Release APK
         env:
           KEYSTORE_FILE: "release.keystore"
