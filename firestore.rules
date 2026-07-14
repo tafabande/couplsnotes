@@ -1,25 +1,70 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to all notes collections (dev, stage, prod)
-    // Enforce title, content, author presence on write
-    match /notes_dev/{noteId} {
-      allow read: if true;
-      allow write: if request.resource.data.title != "" 
-                   && request.resource.data.content != "" 
-                   && request.resource.data.author != "";
+    
+    // Function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null && request.auth.uid != null;
     }
-    match /notes_stage/{noteId} {
-      allow read: if true;
-      allow write: if request.resource.data.title != "" 
-                   && request.resource.data.content != "" 
-                   && request.resource.data.author != "";
+
+    // Function to check if the authenticated user is part of a given pair
+    function belongsToPair(pairId) {
+      let pair = get(/databases/$(database)/documents/pairs/$(pairId)).data;
+      return pair != null && (pair.user1Id == request.auth.uid || pair.user2Id == request.auth.uid);
     }
-    match /notes_prod/{noteId} {
-      allow read: if true;
-      allow write: if request.resource.data.title != "" 
-                   && request.resource.data.content != "" 
-                   && request.resource.data.author != "";
+
+    // Users Collection
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Pairs Collection
+    match /pairs/{pairId} {
+      // Allow read if user is part of the pair
+      allow read: if isAuthenticated() && 
+        (resource == null || resource.data.user1Id == request.auth.uid || resource.data.user2Id == request.auth.uid);
+      
+      // Allow create if user is setting themselves as user1Id or user2Id
+      allow create: if isAuthenticated() && 
+        (request.resource.data.user1Id == request.auth.uid || request.resource.data.user2Id == request.auth.uid);
+      
+      // Allow update/delete if user is part of the pair
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.user1Id == request.auth.uid || resource.data.user2Id == request.auth.uid);
+
+      // Subcollections scoped to the pair
+      match /notes/{noteId} {
+        allow write: if isAuthenticated() && belongsToPair(pairId);
+        // BR-301: Time Capsule Invariant. Hide future scheduled notes from partner.
+        allow read: if isAuthenticated() && belongsToPair(pairId) &&
+            (resource.data.authorId == request.auth.uid || 
+             !('scheduledAt' in resource.data) || 
+             resource.data.scheduledAt == null || 
+             resource.data.scheduledAt <= request.time.toMillis());
+      }
+      
+      match /moods/{moodId} {
+        allow read, write: if isAuthenticated() && belongsToPair(pairId);
+      }
+      
+      match /events/{eventId} {
+        allow read, write: if isAuthenticated() && belongsToPair(pairId);
+      }
+      
+      match /memories/{memoryId} {
+        allow read, write: if isAuthenticated() && belongsToPair(pairId);
+      }
+      
+      match /questions/{questionId} {
+        allow write: if isAuthenticated() && belongsToPair(pairId);
+        // BR-402: Mutual Disclosure Lock. User can only read if they have answered too.
+        allow read: if isAuthenticated() && belongsToPair(pairId) &&
+            (
+                // If it's not answered by the partner, or user has answered it too
+                !('hasAnswered' in resource.data) || 
+                resource.data.hasAnswered[request.auth.uid] == true
+            );
+      }
     }
   }
 }
