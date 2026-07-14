@@ -22,11 +22,4 @@ sealed class UserState {
     data object Offline : UserState()
 }
 
-/**
- * Generic result wrapper for repository operations.
- */
-sealed class Result<out T> {
-    data class Success<T>(val data: T) : Result<T>()
-    data class Error(val message: String, val exception: Exception? = null) : Result<Nothing>()
-    data object Loading : Result<Nothing>()
-}
+

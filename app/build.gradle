@@ -6,6 +6,7 @@ plugins {
     id 'com.google.dagger.hilt.android'
     id 'com.google.devtools.ksp'
     id 'kotlin-kapt'
+    id 'com.google.android.libraries.mapsplatform.secrets-gradle-plugin'
 }
 
 android {
@@ -13,7 +14,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.example.noteshare"
+        applicationId "our.Notes"
         minSdk 26
         targetSdk 34
         versionCode 1
@@ -30,9 +31,20 @@ android {
         }
     }
 
+    signingConfigs {
+        release {
+            storeFile file(System.getenv("KEYSTORE_FILE") ?: 'debug.keystore')
+            storePassword System.getenv("STORE_PASSWORD") ?: 'android'
+            keyAlias System.getenv("KEY_ALIAS") ?: 'androiddebugkey'
+            keyPassword System.getenv("KEY_PASSWORD") ?: 'android'
+        }
+    }
+
     buildTypes {
         release {
-            minifyEnabled false
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -45,6 +57,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.8'
@@ -63,6 +76,7 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.7.0'
     implementation 'androidx.activity:activity-compose:1.8.2'
+    implementation 'com.google.android.material:material:1.11.0'
 
     // Compose BOM
     implementation platform('androidx.compose:compose-bom:2024.01.00')

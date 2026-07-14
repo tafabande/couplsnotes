@@ -152,12 +152,35 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsItem(
-                    icon = Icons.Default.Security,
-                    title = "Security",
-                    subtitle = "Password, account protection",
-                    onClick = {}
-                )
+                var showAdvanced by remember { mutableStateOf(false) }
+                Column {
+                    SettingsItem(
+                        icon = Icons.Default.Settings,
+                        title = "Advanced Settings",
+                        subtitle = "Sync, Export Data",
+                        onClick = { showAdvanced = !showAdvanced }
+                    )
+                    
+                    androidx.compose.animation.AnimatedVisibility(visible = showAdvanced) {
+                        Column(
+                            modifier = Modifier.padding(start = 16.dp, top = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            SettingsItem(
+                                icon = Icons.Default.Sync,
+                                title = "Force Sync",
+                                subtitle = "Sync offline data immediately",
+                                onClick = {}
+                            )
+                            SettingsItem(
+                                icon = Icons.Default.Share,
+                                title = "Export Data",
+                                subtitle = "Export notes to device",
+                                onClick = {}
+                            )
+                        }
+                    }
+                }
             }
 
             item {

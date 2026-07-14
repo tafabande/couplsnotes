@@ -29,7 +29,7 @@ class MoodViewModel @Inject constructor(
 
             _uiState.update { it.copy(userId = user.id, userName = user.displayName) }
 
-            moodRepository.observeMoods(pairId).collect { moods ->
+            moodRepository.getLocalMoods(pairId).collect { moods ->
                 _uiState.update {
                     it.copy(
                         isLoading = false,

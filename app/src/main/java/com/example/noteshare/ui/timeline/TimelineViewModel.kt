@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noteshare.data.model.*
 import com.example.noteshare.data.repository.*
+import com.example.noteshare.util.NetworkMonitor
 import com.example.noteshare.util.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -15,7 +16,8 @@ class TimelineViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val noteRepository: NoteRepository,
     private val moodRepository: MoodRepository,
-    private val eventRepository: EventRepository
+    private val eventRepository: EventRepository,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TimelineUiState())
@@ -30,6 +32,7 @@ class TimelineViewModel @Inject constructor(
             val pairId = user.pairId ?: return@launch
 
             // Combine notes, moods, and events into a unified timeline using Room as SSOT
+            _uiState.update { it.copy(timelineError = null) }
             combine(
                 noteRepository.getLocalNotes(pairId),
                 moodRepository.getLocalMoods(pairId),
@@ -48,8 +51,16 @@ class TimelineViewModel @Inject constructor(
                 }
 
                 items.sortedByDescending { it.timestamp }
-            }.collect { items ->
+            }
+            .catch { _uiState.update { it.copy(timelineError = "Failed to load timeline") } }
+            .collect { items ->
                 _uiState.update { it.copy(isLoading = false, items = items) }
+            }
+        }
+
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                _uiState.update { it.copy(isOnline = isOnline) }
             }
         }
     }
@@ -57,7 +68,9 @@ class TimelineViewModel @Inject constructor(
 
 data class TimelineUiState(
     val isLoading: Boolean = false,
-    val items: List<TimelineItem> = emptyList()
+    val items: List<TimelineItem> = emptyList(),
+    val isOnline: Boolean = true,
+    val timelineError: String? = null
 )
 
 sealed class TimelineItem {

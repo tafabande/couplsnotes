@@ -198,7 +198,7 @@ fun InvitePartnerScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             // Have a code?
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            androidx.compose.material3.Divider(modifier = Modifier.padding(vertical = 16.dp))
 
             TextButton(onClick = onNavigateToEnterCode) {
                 Text("I have an invite code from my partner")

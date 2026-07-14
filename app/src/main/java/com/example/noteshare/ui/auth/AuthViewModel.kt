@@ -62,7 +62,6 @@ class AuthViewModel @Inject constructor(
             is Result.Error -> {
                 _uiState.update { it.copy(isLoggedIn = true, error = result.message) }
             }
-            is Result.Loading -> {}
         }
     }
 
@@ -89,7 +88,7 @@ class AuthViewModel @Inject constructor(
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
-                is Result.Loading -> {}
+
             }
         }
     }
@@ -117,7 +116,7 @@ class AuthViewModel @Inject constructor(
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
-                is Result.Loading -> {}
+
             }
         }
     }
@@ -139,7 +138,7 @@ class AuthViewModel @Inject constructor(
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
-                is Result.Loading -> {}
+
             }
         }
     }
@@ -155,7 +154,7 @@ class AuthViewModel @Inject constructor(
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
-                is Result.Loading -> {}
+
             }
         }
     }

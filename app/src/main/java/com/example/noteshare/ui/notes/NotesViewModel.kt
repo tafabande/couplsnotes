@@ -7,6 +7,7 @@ import com.example.noteshare.data.model.Tag
 import com.example.noteshare.data.repository.AuthRepository
 import com.example.noteshare.data.repository.NoteRepository
 import com.example.noteshare.util.EncryptionUtils
+import com.example.noteshare.util.NetworkMonitor
 import com.example.noteshare.util.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class NotesViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(NotesUiState())
@@ -38,18 +40,26 @@ class NotesViewModel @Inject constructor(
             val user = (userResult as? Result.Success)?.data ?: return@launch
             pairId = user.pairId ?: return@launch
 
-            noteRepository.observeNotes(pairId!!).collect { notes ->
-                val filtered = filterNotes(notes, _uiState.value.selectedTag, _uiState.value.searchQuery)
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        allNotes = notes.filter { n -> !n.isDeleted && !n.isArchived },
-                        filteredNotes = filtered,
-                        userId = user.id,
-                        userName = user.displayName
-                    )
+            _uiState.update { it.copy(notesError = null) }
+            noteRepository.getLocalNotes(pairId!!)
+                .catch { _uiState.update { it.copy(notesError = "Failed to load notes") } }
+                .collect { notes ->
+                    val filtered = filterNotes(notes, _uiState.value.selectedTag, _uiState.value.searchQuery)
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            allNotes = notes.filter { n -> !n.isDeleted && !n.isArchived },
+                            filteredNotes = filtered,
+                            userId = user.id,
+                            userName = user.displayName
+                        )
+                    }
                 }
-                noteRepository.syncToLocal(notes)
+        }
+        
+        viewModelScope.launch {
+            networkMonitor.isOnline.collect { isOnline ->
+                _uiState.update { it.copy(isOnline = isOnline) }
             }
         }
     }
@@ -102,15 +112,31 @@ class NotesViewModel @Inject constructor(
             when (val result = noteRepository.createNote(pid, note)) {
                 is Result.Success -> _noteEvent.emit(NoteEvent.NoteSaved)
                 is Result.Error -> _noteEvent.emit(NoteEvent.Error(result.message))
-                is Result.Loading -> {}
+
             }
+        }
+    }
+
+    fun updateNote(noteId: String, title: String, content: String, tags: List<String>, displayStyle: String, isVault: Boolean = false) {
+        viewModelScope.launch {
+            val pid = pairId ?: return@launch
+            val userId = authRepository.currentUserId ?: return@launch
+
+            val fields = mapOf(
+                "title" to title,
+                "content" to content,
+                "tags" to tags,
+                "displayStyle" to displayStyle,
+                "isVault" to isVault
+            )
+            noteRepository.updateNote(pid, noteId, fields, userId)
         }
     }
 
     fun deleteNote(noteId: String) {
         viewModelScope.launch {
             val pid = pairId ?: return@launch
-            noteRepository.deleteNote(pid, noteId)
+            noteRepository.deleteNote(pid, noteId, _uiState.value.userId)
         }
     }
 
@@ -137,7 +163,8 @@ data class NotesUiState(
     val selectedTag: String? = null,
     val userId: String = "",
     val userName: String = "",
-    val error: String? = null
+    val isOnline: Boolean = true,
+    val notesError: String? = null
 )
 
 sealed class NoteEvent {

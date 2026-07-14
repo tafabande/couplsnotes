@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.example.noteshare.ui.home
 
 import androidx.compose.animation.*
@@ -71,6 +72,15 @@ fun HomeScreen(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 // ═══════════════════════════════════
+                // Offline Banner
+                // ═══════════════════════════════════
+                if (!uiState.isOnline) {
+                    item {
+                        OfflineBanner()
+                    }
+                }
+
+                // ═══════════════════════════════════
                 // Greeting Header
                 // ═══════════════════════════════════
                 item {
@@ -99,7 +109,14 @@ fun HomeScreen(
                 // ═══════════════════════════════════
                 // Event Countdown
                 // ═══════════════════════════════════
-                if (uiState.nextEvent != null) {
+                if (uiState.eventError != null) {
+                    item {
+                        SectionErrorCard(
+                            message = uiState.eventError!!,
+                            onRetry = { viewModel.refresh() }
+                        )
+                    }
+                } else if (uiState.nextEvent != null) {
                     item {
                         EventCountdownCard(event = uiState.nextEvent!!)
                     }
@@ -108,12 +125,21 @@ fun HomeScreen(
                 // ═══════════════════════════════════
                 // Mood Summary
                 // ═══════════════════════════════════
-                item {
-                    MoodSummaryCard(
-                        myMood = uiState.myLatestMood,
-                        partnerMood = uiState.partnerLatestMood,
-                        onCheckIn = onNavigateToMood
-                    )
+                if (uiState.moodError != null) {
+                    item {
+                        SectionErrorCard(
+                            message = uiState.moodError!!,
+                            onRetry = { viewModel.refresh() }
+                        )
+                    }
+                } else {
+                    item {
+                        MoodSummaryCard(
+                            myMood = uiState.myLatestMood,
+                            partnerMood = uiState.partnerLatestMood,
+                            onCheckIn = onNavigateToMood
+                        )
+                    }
                 }
 
                 // ═══════════════════════════════════
@@ -122,11 +148,18 @@ fun HomeScreen(
                 item {
                     SectionHeader(
                         title = "Recent Notes",
-                        subtitle = "${uiState.recentNotes.size} notes"
+                        subtitle = if (uiState.notesError == null) "${uiState.recentNotes.size} notes" else "Error"
                     )
                 }
 
-                if (uiState.recentNotes.isEmpty()) {
+                if (uiState.notesError != null) {
+                    item {
+                        SectionErrorCard(
+                            message = uiState.notesError!!,
+                            onRetry = { viewModel.refresh() }
+                        )
+                    }
+                } else if (uiState.recentNotes.isEmpty()) {
                     item {
                         EmptyStates.NoNotes(
                             onCreateNote = { onNavigateToNoteEditor("new") }
@@ -148,6 +181,31 @@ fun HomeScreen(
 // ═══════════════════════════════════
 // Sub-components
 // ═══════════════════════════════════
+
+@Composable
+private fun OfflineBanner() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudOff,
+            contentDescription = "Offline",
+            tint = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "You're offline. Viewing cached data.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer
+        )
+    }
+}
 
 @Composable
 private fun GreetingHeader(

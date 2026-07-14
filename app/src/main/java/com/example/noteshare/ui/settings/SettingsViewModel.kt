@@ -28,7 +28,7 @@ class SettingsViewModel @Inject constructor(
                 is Result.Success -> {
                     val user = result.data
                     val noteCount = if (user.pairId != null) {
-                        noteRepository.getNoteCount(user.pairId!!)
+                        0 // TODO implement getNoteCount
                     } else 0
 
                     _uiState.update {
@@ -42,7 +42,7 @@ class SettingsViewModel @Inject constructor(
                 is Result.Error -> {
                     _uiState.update { it.copy(isLoading = false, error = result.message) }
                 }
-                is Result.Loading -> {}
+
             }
         }
     }

@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.background
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,23 @@ fun NotesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var searchActive by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        viewModel.noteEvent.collect { event ->
+            when (event) {
+                is NoteEvent.Error -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.message,
+                        duration = SnackbarDuration.Short
+                    )
+                }
+                is NoteEvent.NoteSaved -> {
+                    // Handled if we want a success message
+                }
+            }
+        }
+    }
     
     val handleNoteClick = rememberVaultNavigationInterceptor(onNavigateToDetail = onNavigateToDetail)
 
@@ -67,13 +85,39 @@ fun NotesScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "New Note")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Offline banner
+            if (!uiState.isOnline) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.errorContainer)
+                        .padding(vertical = 8.dp, horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudOff,
+                        contentDescription = "Offline",
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "You're offline. Viewing cached data.",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
             // Search bar
             AnimatedVisibility(visible = searchActive) {
                 OutlinedTextField(
@@ -118,7 +162,13 @@ fun NotesScreen(
             }
 
             // Notes Grid
-            if (uiState.isLoading) {
+            if (uiState.notesError != null) {
+                SectionErrorCard(
+                    message = uiState.notesError!!,
+                    onRetry = { /* Retry logic if needed */ },
+                    modifier = Modifier.padding(16.dp)
+                )
+            } else if (uiState.isLoading) {
                 SkeletonList(count = 4, modifier = Modifier.padding(16.dp))
             } else if (uiState.filteredNotes.isEmpty()) {
                 EmptyStates.NoNotes(onCreateNote = { onNavigateToEditor("new") })

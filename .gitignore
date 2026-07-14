@@ -2,6 +2,7 @@
 **/build/
 .gradle/
 local.properties
+google-services.json
 
 # IDE files
 .idea/

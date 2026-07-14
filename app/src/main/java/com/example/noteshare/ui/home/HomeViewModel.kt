@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.noteshare.data.model.*
 import com.example.noteshare.data.repository.*
 import com.example.noteshare.util.DateUtils
+import com.example.noteshare.util.NetworkMonitor
 import com.example.noteshare.util.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,7 +18,8 @@ class HomeViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
     private val moodRepository: MoodRepository,
     private val eventRepository: EventRepository,
-    private val outboxDao: com.example.noteshare.data.local.db.dao.OutboxDao
+    private val outboxDao: com.example.noteshare.data.local.db.dao.OutboxDao,
+    private val networkMonitor: NetworkMonitor
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -48,33 +50,42 @@ class HomeViewModel @Inject constructor(
             if (pairId != null) {
                 // Load recent notes from Local SSOT
                 launch {
-                    noteRepository.getLocalNotes(pairId).collect { notes ->
-                        val recent = notes.filter { !it.isArchived && !it.isDeleted }
-                            .sortedByDescending { it.updatedAt }
-                            .take(5)
-                        _uiState.update { it.copy(recentNotes = recent) }
-                    }
+                    _uiState.update { it.copy(notesError = null) }
+                    noteRepository.getLocalNotes(pairId)
+                        .catch { _uiState.update { it.copy(notesError = "Failed to load recent notes") } }
+                        .collect { notes ->
+                            val recent = notes.filter { !it.isArchived && !it.isDeleted }
+                                .sortedByDescending { it.updatedAt }
+                                .take(5)
+                            _uiState.update { it.copy(recentNotes = recent) }
+                        }
                 }
 
                 // Load moods from Local SSOT
                 launch {
-                    moodRepository.getLocalMoods(pairId).collect { moods ->
-                        val myMood = moods.firstOrNull { it.userId == userId }
-                        val partnerMood = moods.firstOrNull { it.userId != userId }
-                        _uiState.update {
-                            it.copy(myLatestMood = myMood, partnerLatestMood = partnerMood)
+                    _uiState.update { it.copy(moodError = null) }
+                    moodRepository.getLocalMoods(pairId)
+                        .catch { _uiState.update { it.copy(moodError = "Failed to load moods") } }
+                        .collect { moods ->
+                            val myMood = moods.firstOrNull { it.userId == userId }
+                            val partnerMood = moods.firstOrNull { it.userId != userId }
+                            _uiState.update {
+                                it.copy(myLatestMood = myMood, partnerLatestMood = partnerMood)
+                            }
                         }
-                    }
                 }
 
                 // Load next event from Local SSOT
                 launch {
-                    eventRepository.getUpcomingEvents(pairId).collect { events ->
-                        val upcoming = events.filter { it.date > System.currentTimeMillis() }
-                            .sortedBy { it.date }
-                            .firstOrNull()
-                        _uiState.update { it.copy(nextEvent = upcoming) }
-                    }
+                    _uiState.update { it.copy(eventError = null) }
+                    eventRepository.getUpcomingEvents(pairId)
+                        .catch { _uiState.update { it.copy(eventError = "Failed to load events") } }
+                        .collect { events ->
+                            val upcoming = events.filter { it.date > System.currentTimeMillis() }
+                                .sortedBy { it.date }
+                                .firstOrNull()
+                            _uiState.update { it.copy(nextEvent = upcoming) }
+                        }
                 }
                 
                 // TODO: Firebase RTDB Presence Heartbeat
@@ -85,6 +96,13 @@ class HomeViewModel @Inject constructor(
                 launch {
                     outboxDao.observePendingEventCount().collect { count ->
                         _uiState.update { it.copy(isSyncing = count > 0) }
+                    }
+                }
+                
+                // Observe Network Status
+                launch {
+                    networkMonitor.isOnline.collect { isOnline ->
+                        _uiState.update { it.copy(isOnline = isOnline) }
                     }
                 }
             }
@@ -111,5 +129,8 @@ data class HomeUiState(
     val isPartnerOnline: Boolean = false,
     val partnerName: String = "",
     val isSyncing: Boolean = false,
-    val error: String? = null
+    val isOnline: Boolean = true,
+    val notesError: String? = null,
+    val moodError: String? = null,
+    val eventError: String? = null
 )

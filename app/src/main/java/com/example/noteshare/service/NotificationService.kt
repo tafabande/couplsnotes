@@ -45,7 +45,7 @@ class NotificationService : FirebaseMessagingService() {
 
         val channelId = "noteshare_channel"
         val builder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setAutoCancel(true)

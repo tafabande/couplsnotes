@@ -44,6 +44,21 @@ fun NoteEditorScreen(
         }
     }
 
+    // Debounced Auto-save for existing notes
+    LaunchedEffect(title, content, selectedTags, displayStyle, isVault) {
+        if (!isNewNote && title.isNotBlank() && content.isNotBlank()) {
+            kotlinx.coroutines.delay(1500L) // 1.5 second debounce
+            viewModel.updateNote(
+                noteId = noteId,
+                title = title,
+                content = content,
+                tags = selectedTags.toList(),
+                displayStyle = displayStyle,
+                isVault = isVault
+            )
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -163,7 +178,7 @@ fun NoteEditorScreen(
                 )
             }
 
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            androidx.compose.material3.Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
             // ═══════════════════════════════════
             // Tags Section
@@ -208,7 +223,7 @@ fun NoteEditorScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            androidx.compose.material3.Divider(modifier = Modifier.padding(horizontal = 16.dp))
 
             // ═══════════════════════════════════
             // Display Style Section

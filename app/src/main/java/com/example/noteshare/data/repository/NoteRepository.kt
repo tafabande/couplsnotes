@@ -158,7 +158,7 @@ class NoteRepository @Inject constructor(
                 pairId = pairId,
                 actorId = editorId,
                 eventType = EventType.UPDATE_NOTE,
-                payload = mapOf("id" to noteId) + safeFields
+                payload = (mapOf("id" to noteId) + safeFields).filterValues { it != null } as Map<String, Any>
             )
 
             outboxDao.insertEvent(

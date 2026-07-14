@@ -29,7 +29,7 @@ class CalendarViewModel @Inject constructor(
             val pairId = user.pairId ?: return@launch
             _uiState.update { it.copy(pairId = pairId, userId = user.id) }
 
-            eventRepository.observeEvents(pairId).collect { events ->
+            eventRepository.getUpcomingEvents(pairId).collect { events ->
                 _uiState.update { it.copy(isLoading = false, events = events) }
             }
         }
@@ -52,7 +52,8 @@ class CalendarViewModel @Inject constructor(
     fun deleteEvent(eventId: String) {
         viewModelScope.launch {
             val pid = _uiState.value.pairId ?: return@launch
-            eventRepository.deleteEvent(pid, eventId)
+            // TODO: Add deleteEvent to EventRepository
+            // eventRepository.deleteEvent(pid, eventId)
         }
     }
 }

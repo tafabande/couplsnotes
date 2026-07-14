@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 package com.example.noteshare.ui.calendar
 
 import androidx.compose.foundation.layout.*
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.noteshare.ui.components.EmptyStates
+import com.example.noteshare.ui.components.SkeletonList
 import com.example.noteshare.util.Constants
 import com.example.noteshare.util.DateUtils
 
@@ -55,6 +57,8 @@ fun CalendarScreen(
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 EmptyStates.NoEvents(onAddEvent = { showAddDialog = true })
             }
+        } else if (uiState.isLoading) {
+            SkeletonList(count = 3, modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
