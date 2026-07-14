@@ -48,4 +48,10 @@ interface NoteDao {
 
     @Query("SELECT COUNT(*) FROM notes WHERE pairId = :pairId AND deletedAt IS NULL")
     suspend fun getNoteCount(pairId: String): Int
+
+    @Query("UPDATE notes SET syncStatus = 'SYNCED' WHERE id = :noteId")
+    suspend fun markSynced(noteId: String)
+
+    @Query("SELECT * FROM notes WHERE syncStatus = 'PENDING'")
+    suspend fun getUnsyncedNotes(): List<Note>
 }

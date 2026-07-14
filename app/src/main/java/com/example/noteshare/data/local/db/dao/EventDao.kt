@@ -36,4 +36,7 @@ interface EventDao {
 
     @Query("DELETE FROM events WHERE pairId = :pairId")
     suspend fun deleteAllForPair(pairId: String)
+
+    @Query("UPDATE events SET syncStatus = 'SYNCED' WHERE id = :eventId")
+    suspend fun markSynced(eventId: String)
 }

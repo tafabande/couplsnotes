@@ -15,7 +15,7 @@ import com.example.noteshare.data.model.*
         Pair::class,
         OutboxEventEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

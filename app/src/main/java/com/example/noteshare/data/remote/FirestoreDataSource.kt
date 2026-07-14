@@ -300,4 +300,62 @@ class FirestoreDataSource @Inject constructor(
             }
         awaitClose { listener.remove() }
     }
+
+    // ═══════════════════════════════════
+    // Downstream Sync (Incremental Fetch)
+    // ═══════════════════════════════════
+    suspend fun getNotesUpdatedSince(pairId: String, timestamp: Long): List<Note> {
+        return db.collection(Constants.COLLECTION_PAIRS)
+            .document(pairId)
+            .collection(Constants.COLLECTION_NOTES)
+            .whereGreaterThan("updatedAt", timestamp)
+            .get()
+            .await()
+            .documents.mapNotNull { it.toObject(Note::class.java) }
+    }
+
+    suspend fun getMoodsUpdatedSince(pairId: String, timestamp: Long): List<MoodEntry> {
+        return db.collection(Constants.COLLECTION_PAIRS)
+            .document(pairId)
+            .collection(Constants.COLLECTION_MOODS)
+            .whereGreaterThan("createdAt", timestamp)
+            .get()
+            .await()
+            .documents.mapNotNull { it.toObject(MoodEntry::class.java) }
+    }
+
+    suspend fun getEventsUpdatedSince(pairId: String, timestamp: Long): List<Event> {
+        return db.collection(Constants.COLLECTION_PAIRS)
+            .document(pairId)
+            .collection(Constants.COLLECTION_EVENTS)
+            .whereGreaterThan("updatedAt", timestamp)
+            .get()
+            .await()
+            .documents.mapNotNull { it.toObject(Event::class.java) }
+    }
+
+    // ═══════════════════════════════════
+    // FCM Token
+    // ═══════════════════════════════════
+    /**
+     * Add an FCM token to the user's token map.
+     * Stored as fcmTokens: { "token_string": timestamp }
+     * Supports multiple devices and token rotation.
+     */
+    suspend fun addFcmToken(userId: String, token: String) {
+        db.collection(Constants.COLLECTION_USERS)
+            .document(userId)
+            .update("fcmTokens.$token", System.currentTimeMillis())
+            .await()
+    }
+
+    /**
+     * Remove a stale FCM token (e.g., after send failure).
+     */
+    suspend fun removeFcmToken(userId: String, token: String) {
+        db.collection(Constants.COLLECTION_USERS)
+            .document(userId)
+            .update("fcmTokens.$token", com.google.firebase.firestore.FieldValue.delete())
+            .await()
+    }
 }

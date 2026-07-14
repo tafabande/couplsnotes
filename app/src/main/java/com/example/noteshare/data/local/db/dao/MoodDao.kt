@@ -30,4 +30,7 @@ interface MoodDao {
 
     @Query("DELETE FROM moods WHERE pairId = :pairId")
     suspend fun deleteAllForPair(pairId: String)
+
+    @Query("UPDATE moods SET syncStatus = 'SYNCED' WHERE id = :moodId")
+    suspend fun markSynced(moodId: String)
 }

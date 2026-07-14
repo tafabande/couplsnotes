@@ -106,4 +106,5 @@ object Constants {
     const val PREF_IS_DARK_MODE = "is_dark_mode"
     const val PREF_NOTIFICATIONS_ENABLED = "notifications_enabled"
     const val PREF_LAST_SYNC = "last_sync"
+    const val PREF_LAST_SYNC_TIMESTAMP = "last_sync_timestamp"
 }

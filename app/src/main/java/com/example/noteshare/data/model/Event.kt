@@ -18,6 +18,7 @@ data class Event(
     val isRecurring: Boolean = false,
     val createdBy: String = "",
     val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis(),
     val syncStatus: SyncStatus = SyncStatus.PENDING,
     val version: Int = 1
 ) {

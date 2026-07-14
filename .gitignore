@@ -11,3 +11,7 @@ google-services.json
 # OS files
 .DS_Store
 Thumbs.db
+
+# Cloud Functions
+functions/node_modules/
+functions/lib/

@@ -260,8 +260,22 @@ class NoteRepository @Inject constructor(
 
     /**
      * Downstream sync from Firestore.
+     * Fetches notes updated since the given timestamp and upserts into Room.
+     * Higher version wins in conflict resolution.
      */
-    suspend fun syncDownstream() {
-        // Implementation provided by Firestore listener or explicit fetch.
+    suspend fun syncDownstream(pairId: String, lastSyncTimestamp: Long) {
+        try {
+            val remoteNotes = firestoreDataSource.getNotesUpdatedSince(pairId, lastSyncTimestamp)
+            for (remoteNote in remoteNotes) {
+                val localNote = noteDao.getNoteById(remoteNote.id)
+                if (localNote == null || remoteNote.version >= localNote.version) {
+                    // Remote wins — upsert with SYNCED status
+                    noteDao.insertNote(remoteNote.copy(syncStatus = SyncStatus.SYNCED))
+                }
+                // If local version is higher, local wins (will be pushed upstream)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }

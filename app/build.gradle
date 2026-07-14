@@ -159,3 +159,8 @@ dependencies {
 kapt {
     correctErrorTypes = true
 }
+
+kotlin {
+    jvmToolchain(17)
+}
+
