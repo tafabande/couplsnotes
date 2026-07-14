@@ -56,6 +56,13 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      - name: Verify Firebase credentials
+        run: |
+          if [ -z "${{ secrets.CREDENTIAL_FILE_CONTENT }}" ]; then
+            echo "Missing CREDENTIAL_FILE_CONTENT secret"
+            exit 1
+          fi
+
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1.7.0
         with:
