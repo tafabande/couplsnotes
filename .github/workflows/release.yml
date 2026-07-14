@@ -68,7 +68,6 @@ jobs:
         with:
           appId: "1:161490836707:android:f8416c18be09102d5df9d6"
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
-          groups: testers
           file: app/build/outputs/apk/release/app-release.apk
           releaseNotes: ${{ github.event.inputs.release_notes || github.event.head_commit.message }}
 
