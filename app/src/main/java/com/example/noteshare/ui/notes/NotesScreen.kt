@@ -57,11 +57,10 @@ fun NotesScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        "Notes",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text("Notes", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                        Text("Capture and organize quickly", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 },
                 actions = {
                     IconButton(onClick = { searchActive = !searchActive }) {
@@ -171,7 +170,7 @@ fun NotesScreen(
             if (uiState.notesError != null) {
                 SectionErrorCard(
                     message = uiState.notesError!!,
-                    onRetry = { /* Retry logic if needed */ },
+                    onRetry = { viewModel.refresh() },
                     modifier = Modifier.padding(16.dp)
                 )
             } else if (uiState.isLoading) {
@@ -347,14 +346,10 @@ private fun NoteGridCard(
                             ) {
                                 Icon(tagObj.icon, contentDescription = null, modifier = Modifier.size(10.dp))
                                 Spacer(modifier = Modifier.width(2.dp))
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
+                        Text(text = tag, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp)
                     }
+                }
+            }
                 }
                 Spacer(modifier = Modifier.height(4.dp))
             }

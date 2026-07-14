@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.noteshare.data.model.Event
 import com.example.noteshare.data.repository.AuthRepository
 import com.example.noteshare.data.repository.EventRepository
-import com.example.noteshare.util.Constants
 import com.example.noteshare.util.Result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -51,9 +50,7 @@ class CalendarViewModel @Inject constructor(
 
     fun deleteEvent(eventId: String) {
         viewModelScope.launch {
-            val pid = _uiState.value.pairId ?: return@launch
-            // TODO: Add deleteEvent to EventRepository
-            // eventRepository.deleteEvent(pid, eventId)
+            _uiState.update { it.copy(error = "Deleting events is not available yet.") }
         }
     }
 }
@@ -62,5 +59,6 @@ data class CalendarUiState(
     val isLoading: Boolean = true,
     val events: List<Event> = emptyList(),
     val pairId: String? = null,
-    val userId: String = ""
+    val userId: String = "",
+    val error: String? = null
 )

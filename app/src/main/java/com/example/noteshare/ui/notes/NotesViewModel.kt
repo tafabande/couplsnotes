@@ -33,14 +33,23 @@ class NotesViewModel @Inject constructor(
         loadNotes()
     }
 
+    fun refresh() {
+        loadNotes()
+    }
+
     private fun loadNotes() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            _uiState.update { it.copy(isLoading = true, notesError = null) }
             val userResult = authRepository.getCurrentUserProfile()
-            val user = (userResult as? Result.Success)?.data ?: return@launch
-            pairId = user.pairId ?: return@launch
+            val user = (userResult as? Result.Success)?.data
+            if (user == null || user.pairId == null) {
+                _uiState.update {
+                    it.copy(isLoading = false, notesError = "We could not load your notes.")
+                }
+                return@launch
+            }
+            pairId = user.pairId
 
-            _uiState.update { it.copy(notesError = null) }
             noteRepository.getLocalNotes(pairId!!)
                 .catch { _uiState.update { it.copy(notesError = "Failed to load notes") } }
                 .collect { notes ->

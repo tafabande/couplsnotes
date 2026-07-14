@@ -132,7 +132,12 @@ fun NoteEditorScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNewNote) "New Note" else "Edit Note") },
+                title = {
+                    Column {
+                        Text(if (isNewNote) "New note" else "Edit note", fontWeight = FontWeight.SemiBold)
+                        Text("Keep it simple and save quickly", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -207,7 +212,6 @@ fun NoteEditorScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Title field
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it; if (it.isNotBlank()) attemptedSave = false },
@@ -225,7 +229,6 @@ fun NoteEditorScreen(
                 singleLine = true
             )
 
-            // Content field
             OutlinedTextField(
                 value = content,
                 onValueChange = { content = it; if (it.isNotBlank()) attemptedSave = false },
@@ -243,7 +246,7 @@ fun NoteEditorScreen(
                 supportingText = if (attemptedSave && content.isBlank()) { { Text("Note content cannot be empty") } } else null
             )
 
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(96.dp))
         }
     }
 }

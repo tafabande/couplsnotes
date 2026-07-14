@@ -21,13 +21,13 @@ data class Tag(
             Tag("school", Icons.Default.School, TagSchool),
             Tag("work", Icons.Default.Work, TagWork),
             Tag("family", Icons.Default.FamilyRestroom, TagFamily),
-            Tag("date", Icons.Default.Favorite, Color(0xFFE8677D)),
-            Tag("gift", Icons.Default.CardGiftcard, Color(0xFF9B7FC9)),
-            Tag("health", Icons.Default.FitnessCenter, Color(0xFF4CAF79)),
-            Tag("shopping", Icons.Default.ShoppingCart, Color(0xFFE8A94D)),
-            Tag("thoughts", Icons.Default.Lightbulb, Color(0xFF7C7585)),
-            Tag("recipes", Icons.Default.MenuBook, Color(0xFFE8A94D)),
-            Tag("passwords", Icons.Default.Lock, Color(0xFF5B8DEF))
+            Tag("date", Icons.Default.Favorite, Tertiary),
+            Tag("gift", Icons.Default.CardGiftcard, Primary),
+            Tag("health", Icons.Default.FitnessCenter, Success),
+            Tag("shopping", Icons.Default.ShoppingCart, Warning),
+            Tag("thoughts", Icons.Default.Lightbulb, Secondary),
+            Tag("recipes", Icons.Default.MenuBook, TertiaryDark),
+            Tag("passwords", Icons.Default.Lock, PrimaryDark)
         )
 
         fun fromName(name: String): Tag {
