@@ -129,7 +129,7 @@ private fun TimelineNoteCard(item: TimelineItem.NoteItem, onClick: () -> Unit) {
                 modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text("📝", fontSize = 18.sp)
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))

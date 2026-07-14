@@ -342,28 +342,28 @@ private fun QuickActionsRow(
     ) {
         item {
             QuickActionChip(
-                emoji = "💭",
+                icon = Icons.Default.Mood,
                 label = "Mood",
                 onClick = onMoodClick
             )
         }
         item {
             QuickActionChip(
-                emoji = "📅",
+                icon = Icons.Default.DateRange,
                 label = "Calendar",
                 onClick = onCalendarClick
             )
         }
         item {
             QuickActionChip(
-                emoji = "📸",
+                icon = Icons.Default.PhotoCamera,
                 label = "Memories",
                 onClick = onMemoriesClick
             )
         }
         item {
             QuickActionChip(
-                emoji = "✍️",
+                icon = Icons.Default.Edit,
                 label = "New Note",
                 onClick = onNewNoteClick
             )
@@ -374,7 +374,7 @@ private fun QuickActionsRow(
 
 @Composable
 private fun QuickActionChip(
-    emoji: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     onClick: () -> Unit
 ) {
@@ -390,7 +390,7 @@ private fun QuickActionChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(text = emoji, fontSize = 18.sp)
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
@@ -484,10 +484,11 @@ private fun MoodSummaryCard(
                 )
             }
 
-            Text(
-                text = "💕",
-                fontSize = 20.sp,
-                modifier = Modifier.padding(horizontal = 8.dp)
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 8.dp).size(20.dp)
             )
 
             // Partner mood

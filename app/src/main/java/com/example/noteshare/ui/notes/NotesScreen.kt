@@ -153,7 +153,13 @@ fun NotesScreen(
                     FilterChip(
                         selected = uiState.selectedTag == tag.name,
                         onClick = { viewModel.filterByTag(if (uiState.selectedTag == tag.name) null else tag.name) },
-                        label = { Text("${tag.emoji} ${tag.name}") },
+                        label = { 
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(tag.icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(tag.name)
+                            }
+                        },
                         leadingIcon = if (uiState.selectedTag == tag.name) {
                             { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                         } else null
@@ -335,12 +341,18 @@ private fun NoteGridCard(
                             color = tagObj.color.copy(alpha = 0.15f),
                             shape = MaterialTheme.shapes.extraSmall
                         ) {
-                            Text(
-                                text = "${tagObj.emoji} $tag",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                fontSize = 10.sp
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Icon(tagObj.icon, contentDescription = null, modifier = Modifier.size(10.dp))
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Text(
+                                    text = tag,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp
+                                )
+                            }
                         }
                     }
                 }

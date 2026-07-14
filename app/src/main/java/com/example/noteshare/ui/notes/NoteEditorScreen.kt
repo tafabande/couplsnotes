@@ -1,7 +1,7 @@
 package com.example.noteshare.ui.notes
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +34,7 @@ fun NoteEditorScreen(
     var isVault by remember { mutableStateOf(false) }
     var showTagPicker by remember { mutableStateOf(false) }
     var showStylePicker by remember { mutableStateOf(false) }
+    var showOptionsMenu by remember { mutableStateOf(false) }
     var attemptedSave by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -59,6 +61,74 @@ fun NoteEditorScreen(
         }
     }
 
+    if (showTagPicker) {
+        AlertDialog(
+            onDismissRequest = { showTagPicker = false },
+            title = { Text("Select Tags") },
+            text = {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(Tag.DEFAULTS) { tag ->
+                        FilterChip(
+                            selected = selectedTags.contains(tag.name),
+                            onClick = {
+                                selectedTags = if (selectedTags.contains(tag.name))
+                                    selectedTags - tag.name
+                                else
+                                    selectedTags + tag.name
+                            },
+                            label = { 
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(tag.icon, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(tag.name)
+                                }
+                            }
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showTagPicker = false }) {
+                    Text("Done")
+                }
+            }
+        )
+    }
+
+    if (showStylePicker) {
+        AlertDialog(
+            onDismissRequest = { showStylePicker = false },
+            title = { Text("Display Style") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StyleOption(
+                        label = "Plain",
+                        icon = Icons.Default.Description,
+                        selected = displayStyle == Constants.DISPLAY_PLAIN,
+                        onClick = { displayStyle = Constants.DISPLAY_PLAIN; showStylePicker = false }
+                    )
+                    StyleOption(
+                        label = "Big Picture",
+                        icon = Icons.Default.Image,
+                        selected = displayStyle == Constants.DISPLAY_BIG_PICTURE,
+                        onClick = { displayStyle = Constants.DISPLAY_BIG_PICTURE; showStylePicker = false }
+                    )
+                    StyleOption(
+                        label = "Framed",
+                        icon = Icons.Default.CropPortrait,
+                        selected = displayStyle == Constants.DISPLAY_FRAMED,
+                        onClick = { displayStyle = Constants.DISPLAY_FRAMED; showStylePicker = false }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showStylePicker = false }) {
+                    Text("Close")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -69,7 +139,6 @@ fun NoteEditorScreen(
                     }
                 },
                 actions = {
-                    // Save button
                     TextButton(
                         onClick = {
                             attemptedSave = true
@@ -89,6 +158,41 @@ fun NoteEditorScreen(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary
                         )
+                    }
+                    Box {
+                        IconButton(onClick = { showOptionsMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                        }
+                        DropdownMenu(
+                            expanded = showOptionsMenu,
+                            onDismissRequest = { showOptionsMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Vault Note") },
+                                trailingIcon = {
+                                    Switch(
+                                        checked = isVault,
+                                        onCheckedChange = { isVault = it },
+                                        modifier = Modifier.scale(0.8f)
+                                    )
+                                },
+                                onClick = { isVault = !isVault }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Tags") },
+                                onClick = {
+                                    showOptionsMenu = false
+                                    showTagPicker = true
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Display Style") },
+                                onClick = {
+                                    showOptionsMenu = false
+                                    showStylePicker = true
+                                }
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -139,144 +243,6 @@ fun NoteEditorScreen(
                 supportingText = if (attemptedSave && content.isBlank()) { { Text("Note content cannot be empty") } } else null
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // ═══════════════════════════════════
-            // Vault Security Section
-            // ═══════════════════════════════════
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = "Vault Note",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (isVault) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Vault Note",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Require biometric authentication to view",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Switch(
-                    checked = isVault,
-                    onCheckedChange = { isVault = it }
-                )
-            }
-
-            androidx.compose.material3.Divider(modifier = Modifier.padding(horizontal = 16.dp))
-
-            // ═══════════════════════════════════
-            // Tags Section
-            // ═══════════════════════════════════
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Label,
-                    contentDescription = "Tags",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Tags",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(Tag.DEFAULTS) { tag ->
-                    FilterChip(
-                        selected = selectedTags.contains(tag.name),
-                        onClick = {
-                            selectedTags = if (selectedTags.contains(tag.name))
-                                selectedTags - tag.name
-                            else
-                                selectedTags + tag.name
-                        },
-                        label = { Text("${tag.emoji} ${tag.name}") }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            androidx.compose.material3.Divider(modifier = Modifier.padding(horizontal = 16.dp))
-
-            // ═══════════════════════════════════
-            // Display Style Section
-            // ═══════════════════════════════════
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.Style,
-                    contentDescription = "Style",
-                    modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Display Style",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                StyleOption(
-                    label = "Plain",
-                    emoji = "📄",
-                    selected = displayStyle == Constants.DISPLAY_PLAIN,
-                    onClick = { displayStyle = Constants.DISPLAY_PLAIN },
-                    modifier = Modifier.weight(1f)
-                )
-                StyleOption(
-                    label = "Big Picture",
-                    emoji = "🖼️",
-                    selected = displayStyle == Constants.DISPLAY_BIG_PICTURE,
-                    onClick = { displayStyle = Constants.DISPLAY_BIG_PICTURE },
-                    modifier = Modifier.weight(1f)
-                )
-                StyleOption(
-                    label = "Framed",
-                    emoji = "🪟",
-                    selected = displayStyle == Constants.DISPLAY_FRAMED,
-                    onClick = { displayStyle = Constants.DISPLAY_FRAMED },
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
             Spacer(modifier = Modifier.height(80.dp))
         }
     }
@@ -286,14 +252,14 @@ fun NoteEditorScreen(
 @Composable
 private fun StyleOption(
     label: String,
-    emoji: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (selected)
                 MaterialTheme.colorScheme.primaryContainer
@@ -305,17 +271,17 @@ private fun StyleOption(
             CardDefaults.outlinedCardBorder()
         else null
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = emoji, fontSize = 24.sp)
-            Spacer(modifier = Modifier.height(4.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodyMedium,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
             )
         }

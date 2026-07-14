@@ -9,10 +9,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,24 +23,24 @@ import androidx.compose.ui.unit.sp
 import com.example.noteshare.ui.theme.*
 
 data class OnboardingPage(
-    val emoji: String,
+    val icon: ImageVector,
     val title: String,
     val description: String
 )
 
 private val onboardingPages = listOf(
     OnboardingPage(
-        emoji = "📝",
+        icon = Icons.Default.Edit,
         title = "Share Notes",
         description = "Write and share thoughts, lists, and ideas with your partner in real-time"
     ),
     OnboardingPage(
-        emoji = "📸",
+        icon = Icons.Default.PhotoCamera,
         title = "Capture Memories",
         description = "Save photos, milestones, and special moments in your shared timeline"
     ),
     OnboardingPage(
-        emoji = "💕",
+        icon = Icons.Default.Favorite,
         title = "Stay Connected",
         description = "Track moods, plan events, and grow closer together every day"
     )
@@ -135,11 +138,12 @@ private fun OnboardingPageContent(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Large emoji
-        Text(
-            text = page.emoji,
-            fontSize = 80.sp,
-            modifier = Modifier.padding(bottom = 32.dp)
+        // Large icon
+        Icon(
+            imageVector = page.icon,
+            contentDescription = null,
+            modifier = Modifier.padding(bottom = 32.dp).size(80.dp),
+            tint = MaterialTheme.colorScheme.primary
         )
 
         // Title

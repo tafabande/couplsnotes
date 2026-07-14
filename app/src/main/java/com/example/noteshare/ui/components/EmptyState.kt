@@ -2,6 +2,8 @@ package com.example.noteshare.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,13 +12,14 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
  * Thoughtful empty state component with emoji, message, and optional action button.
  */
 @Composable
 fun EmptyState(
-    emoji: String,
+    icon: ImageVector,
     title: String,
     subtitle: String,
     modifier: Modifier = Modifier,
@@ -42,10 +45,13 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = emoji,
-            fontSize = (48 * scale).sp,
-            modifier = Modifier.padding(bottom = 16.dp)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier
+                .padding(bottom = 16.dp)
+                .size((48 * scale).dp),
+            tint = MaterialTheme.colorScheme.primary
         )
 
         Text(
@@ -87,7 +93,7 @@ object EmptyStates {
     @Composable
     fun NoNotes(onCreateNote: () -> Unit) {
         EmptyState(
-            emoji = "✍️",
+            icon = Icons.Default.Edit,
             title = "Your first note is waiting",
             subtitle = "Start sharing thoughts, ideas, and moments with your partner",
             actionLabel = "Write a Note",
@@ -98,7 +104,7 @@ object EmptyStates {
     @Composable
     fun NoMemories(onAddMemory: () -> Unit) {
         EmptyState(
-            emoji = "📸",
+            icon = Icons.Default.PhotoCamera,
             title = "No memories yet",
             subtitle = "Capture your special moments together",
             actionLabel = "Add Memory",
@@ -109,7 +115,7 @@ object EmptyStates {
     @Composable
     fun NoEvents(onAddEvent: () -> Unit) {
         EmptyState(
-            emoji = "📅",
+            icon = Icons.Default.DateRange,
             title = "No upcoming events",
             subtitle = "Add birthdays, anniversaries, and dates to never forget",
             actionLabel = "Add Event",
@@ -120,7 +126,7 @@ object EmptyStates {
     @Composable
     fun NoTimeline() {
         EmptyState(
-            emoji = "🌟",
+            icon = Icons.Default.Star,
             title = "Your story starts here",
             subtitle = "Notes, moods, and memories will appear in your shared timeline"
         )
@@ -129,7 +135,7 @@ object EmptyStates {
     @Composable
     fun NoMoods(onCheckIn: () -> Unit) {
         EmptyState(
-            emoji = "💭",
+            icon = Icons.Default.Mood,
             title = "How are you feeling?",
             subtitle = "Share your mood with your partner",
             actionLabel = "Check In",
@@ -140,7 +146,7 @@ object EmptyStates {
     @Composable
     fun NoPartner(onInvite: () -> Unit) {
         EmptyState(
-            emoji = "💕",
+            icon = Icons.Default.Favorite,
             title = "Better together",
             subtitle = "Invite your partner to start sharing notes and memories",
             actionLabel = "Invite Partner",

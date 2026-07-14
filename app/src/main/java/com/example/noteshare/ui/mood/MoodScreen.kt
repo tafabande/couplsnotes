@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -89,6 +90,7 @@ fun MoodScreen(
                                 5 to "🥰"
                             ).forEach { (level, emoji) ->
                                 MoodEmoji(
+                                    level = level,
                                     emoji = emoji,
                                     isSelected = selectedMood == level,
                                     onClick = { selectedMood = level }
@@ -198,6 +200,7 @@ fun MoodScreen(
 
 @Composable
 private fun MoodEmoji(
+    level: Int,
     emoji: String,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -208,6 +211,27 @@ private fun MoodEmoji(
         label = "mood_scale"
     )
 
+    val rotation = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(0f) }
+
+    LaunchedEffect(isSelected) {
+        if (isSelected) {
+            when (level) {
+                1, 2 -> { // Shaking for crying/confused
+                    rotation.animateTo(15f, animationSpec = tween(100))
+                    rotation.animateTo(-15f, animationSpec = tween(100))
+                    rotation.animateTo(10f, animationSpec = tween(100))
+                    rotation.animateTo(-10f, animationSpec = tween(100))
+                    rotation.animateTo(0f, animationSpec = tween(100))
+                }
+                4, 5 -> { // Bouncing for happy/loving
+                    offsetY.animateTo(-20f, animationSpec = tween(150))
+                    offsetY.animateTo(0f, animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                }
+            }
+        }
+    }
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.clickable(onClick = onClick)
@@ -215,7 +239,10 @@ private fun MoodEmoji(
         Text(
             text = emoji,
             fontSize = 36.sp,
-            modifier = Modifier.scale(scale)
+            modifier = Modifier
+                .offset(y = offsetY.value.dp)
+                .rotate(rotation.value)
+                .scale(scale)
         )
         if (isSelected) {
             Spacer(modifier = Modifier.height(4.dp))
